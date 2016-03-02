@@ -7,15 +7,17 @@ module I18n
         I18n::JS.config_file_paths = I18n::JS.discover_configs
       end
 
-      initializer "i18n-js.register_preprocessor", :after => "sprockets.environment" do
+      initializer "i18n-js.register_preprocessor", after: :engines_blank_point, before: :finisher_hook do
         next unless JS::Dependencies.using_asset_pipeline?
         next unless JS::Dependencies.sprockets_supports_register_preprocessor?
 
-        Rails.application.assets.register_preprocessor "application/javascript", :"i18n-js_dependencies" do |context, source|
-          if context.logical_path == "i18n/filtered"
-            ::I18n.load_path.each {|path| context.depend_on(File.expand_path(path))}
+        Rails.application.config.assets.configure do |config|
+          config.register_preprocessor "application/javascript", :"i18n-js_dependencies" do |context, source|
+            if context.logical_path == "i18n/filtered"
+              ::I18n.load_path.each {|path| context.depend_on(File.expand_path(path))}
+            end
+            source
           end
-          source
         end
       end
     end
